@@ -1,9 +1,6 @@
 package worktree
 
-import (
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/davecgh/go-spew/spew"
-)
+import tea "github.com/charmbracelet/bubbletea"
 
 // Init implements tea.Model. It kicks off loading all worktrees.
 func (m Model) Init() tea.Cmd {
@@ -12,17 +9,7 @@ func (m Model) Init() tea.Cmd {
 
 // Update implements tea.Model.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.debug != nil {
-		spew.Fdump(m.debug, msg)
-	}
-
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		// Let ctrl+c always quit, regardless of state.
-		if msg.String() == "ctrl+c" {
-			return m, tea.Quit
-		}
-
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
 		return m, nil

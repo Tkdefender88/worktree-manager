@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "github.com/Tkdefender88/worktree-manager/cmd"
 
 func main() {
-	fmt.Println("worktree-manager")
+	cmd.Execute()
 }

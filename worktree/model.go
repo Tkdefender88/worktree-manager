@@ -1,8 +1,6 @@
 package worktree
 
 import (
-	"io"
-
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -30,7 +28,6 @@ type Model struct {
 	defaultWorktrees string // default base directory for worktrees
 	keyMap           KeyMap
 	styles           Styles
-	debug            io.Writer
 
 	// UI state.
 	state     state
@@ -69,19 +66,6 @@ func WithKeyMap(km KeyMap) Option {
 func WithStyles(s Styles) Option {
 	return func(m *Model) {
 		m.styles = s
-	}
-}
-
-// WithDebug enables debug message dumping to the given writer.
-// All tea.Msg values received by Update will be dumped using go-spew
-// for deep struct inspection. Typically used with a file:
-//
-//	f, _ := os.Create("debug.log")
-//	defer f.Close()
-//	model := worktree.New(svc, worktree.WithDebug(f))
-func WithDebug(w io.Writer) Option {
-	return func(m *Model) {
-		m.debug = w
 	}
 }
 
@@ -130,14 +114,13 @@ func (m *Model) SetSize(width, height int) {
 }
 
 // SelectedWorktree returns the currently selected worktree, if any.
-// Returns false if the selection is on a repo header or no item is selected.
 func (m Model) SelectedWorktree() (Worktree, bool) {
 	item := m.list.SelectedItem()
 	if item == nil {
 		return Worktree{}, false
 	}
 	li, ok := item.(listItem)
-	if !ok || li.isHeader {
+	if !ok {
 		return Worktree{}, false
 	}
 	return li.wt, true

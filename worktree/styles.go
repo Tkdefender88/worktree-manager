@@ -6,8 +6,8 @@ import "github.com/charmbracelet/lipgloss"
 // error views. List-level styles (title, help, pagination, status bar) are
 // managed by list.Styles and configured separately via list.Model.Styles.
 type Styles struct {
-	// RepoHeader is the style for repo group headers in the list.
-	RepoHeader lipgloss.Style
+	// RepoName is the style for the repo name prefix on each list item.
+	RepoName lipgloss.Style
 	// WorktreeItem is the style for a normal (unselected) worktree line.
 	WorktreeItem lipgloss.Style
 	// SelectedItem is the style for the currently selected worktree.
@@ -29,14 +29,11 @@ type Styles struct {
 // DefaultStyles returns the default color scheme for the delegate.
 func DefaultStyles() Styles {
 	return Styles{
-		RepoHeader: lipgloss.NewStyle().
+		RepoName: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("39")).
-			PaddingLeft(2),
-		WorktreeItem: lipgloss.NewStyle().
-			PaddingLeft(4),
+			Foreground(lipgloss.Color("39")),
+		WorktreeItem: lipgloss.NewStyle(),
 		SelectedItem: lipgloss.NewStyle().
-			PaddingLeft(2).
 			Foreground(lipgloss.Color("170")).
 			Bold(true),
 		Branch: lipgloss.NewStyle().
