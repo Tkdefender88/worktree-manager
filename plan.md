@@ -199,8 +199,8 @@ type WorktreesPrunedEvent struct { Pruned []string }
 | **1. Foundation** | COMPLETE | `go mod init`, config structs, domain types, service interface | `go.mod`, `internal/config/config.go`, `worktree/types.go`, `worktree/service.go` |
 | **2. Git Implementation** | COMPLETE | Real git worktree operations, parse porcelain output, unit + integration tests | `internal/git/worktree.go`, `internal/git/worktree_test.go`, `worktree/types_test.go` |
 | **3. Core TUI** | COMPLETE | Model struct, `New()` with options, `Init()` loads all worktrees, list rendering grouped by repo | `worktree/model.go`, `worktree/commands.go`, `worktree/messages.go`, `worktree/delegate.go`, `worktree/styles.go`, `worktree/keymap.go` |
-| **4. Operations** | | Create flow (repo picker → branch input), delete with confirmation, prune, switch | Updates to `model.go`, `commands.go`, `messages.go` |
-| **5. CLI Wrapper** | | Cobra root command, viper config loading, root model wrapping the worktree model, debug dump support | `main.go`, `cmd/root.go` |
+| **4. Operations** | COMPLETE | Create flow (repo picker → branch input), delete with confirmation, prune, switch | Updates to `model.go`, `commands.go`, `messages.go`, `update.go`, `view.go` |
+| **5. CLI Wrapper** | COMPLETE | Cobra root command, viper config loading, root model wrapping the worktree model, debug dump support | `main.go`, `cmd/root.go` |
 | **6. Events** | | Exported event messages for parent integration, `SetSize()` | `worktree/messages.go` |
 | **7. Testing** | | Mock service, unit tests, teatest integration tests | `worktree/model_test.go`, `internal/git/worktree_test.go` |
 

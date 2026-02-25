@@ -4,6 +4,7 @@
 package tui
 
 import (
+	"fmt"
 	"io"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,8 +17,9 @@ import (
 // It wraps the worktree component and handles application-level concerns
 // like debug logging and quit keybindings.
 type Model struct {
-	worktree worktree.Model
-	debug    io.Writer
+	worktree   worktree.Model
+	debug      io.Writer
+	switchedTo string // set when user switches to a worktree; printed after quit
 }
 
 // Option configures the root Model.
@@ -55,12 +57,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
+		switch msg.String() {
+		case "ctrl+c":
 			return m, tea.Quit
+		case "q":
+			// Only quit from the list state — don't quit during dialogs.
+			if !m.worktree.InDialog() {
+				return m, tea.Quit
+			}
 		}
 
 	case tea.WindowSizeMsg:
 		m.worktree.SetSize(msg.Width, msg.Height)
+		// Don't forward — the component relies on SetSize(), not WindowSizeMsg.
+		return m, nil
+
+	case worktree.WorktreeSwitchedEvent:
+		// In standalone mode, switching prints the path and exits.
+		m.switchedTo = msg.Worktree.Path
+		return m, tea.Quit
 	}
 
 	updated, cmd := m.worktree.Update(msg)
@@ -71,4 +86,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View implements tea.Model. Delegates to the worktree component.
 func (m Model) View() string {
 	return m.worktree.View()
+}
+
+// SwitchedTo returns the path the user switched to, if any.
+// The caller should print this after the program exits.
+func (m Model) SwitchedTo() string {
+	return m.switchedTo
+}
+
+// FinalOutput returns any text that should be printed to stdout after
+// the TUI exits. This enables the "select and cd" pattern:
+//
+//	cd $(worktree-manager)
+func (m Model) FinalOutput() string {
+	if m.switchedTo != "" {
+		return fmt.Sprintf("%s", m.switchedTo)
+	}
+	return ""
 }

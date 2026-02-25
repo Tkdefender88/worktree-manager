@@ -13,6 +13,29 @@ type errMsg struct {
 	err error
 }
 
+// worktreeCreatedMsg is sent when a worktree has been successfully created.
+type worktreeCreatedMsg struct {
+	repo   Repo
+	branch string
+	path   string
+}
+
+// worktreeDeletedMsg is sent when a worktree has been successfully deleted.
+type worktreeDeletedMsg struct {
+	path string
+}
+
+// worktreesPrunedMsg is sent when worktrees have been successfully pruned.
+type worktreesPrunedMsg struct {
+	pruned []string
+}
+
+// pruneDryRunMsg is sent with the dry-run results so the user can confirm.
+type pruneDryRunMsg struct {
+	repo   Repo
+	pruned []string
+}
+
 // Exported event messages that parent models can react to.
 
 // WorktreeCreatedEvent is emitted after a worktree is successfully created.

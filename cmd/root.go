@@ -108,8 +108,16 @@ func run(cmd *cobra.Command, args []string) error {
 	rootModel := tui.New(wtModel, tuiOpts...)
 	p := tea.NewProgram(rootModel, tea.WithAltScreen())
 
-	if _, err := p.Run(); err != nil {
+	finalModel, err := p.Run()
+	if err != nil {
 		return fmt.Errorf("running TUI: %w", err)
+	}
+
+	// If the user switched to a worktree, print the path so callers can cd.
+	if m, ok := finalModel.(tui.Model); ok {
+		if output := m.FinalOutput(); output != "" {
+			fmt.Println(output)
+		}
 	}
 
 	return nil

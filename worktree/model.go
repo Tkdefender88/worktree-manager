@@ -3,6 +3,7 @@ package worktree
 import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -13,6 +14,21 @@ const (
 	stateLoading state = iota
 	stateList
 	stateError
+
+	// Create flow states.
+	stateCreatePickRepo // user picks which repo to create a worktree in
+	stateCreateBranch   // user types a branch name
+	stateCreateConfirm  // user confirms new-branch toggle and creation
+	stateCreating       // async create in progress
+
+	// Delete flow states.
+	stateDeleteConfirm // user confirms deletion (shows force option if dirty)
+	stateDeleting      // async delete in progress
+
+	// Prune flow states.
+	statePrunePickRepo // user picks which repo to prune
+	statePruneDryRun   // showing dry-run results, waiting for confirm
+	statePruning       // async prune in progress
 )
 
 // Model is the Bubble Tea model for the worktree manager component.
@@ -36,6 +52,23 @@ type Model struct {
 	err       error
 	width     int
 	height    int
+
+	// Create flow state.
+	createRepoIdx   int             // selected repo index during create
+	createBranch    textinput.Model // branch name text input
+	createNewBranch bool            // whether to create a new branch (-b)
+
+	// Delete flow state.
+	deleteTarget Worktree // worktree being deleted
+	deleteForce  bool     // force delete (for dirty worktrees)
+
+	// Prune flow state.
+	pruneRepoIdx    int      // selected repo index during prune
+	pruneDryResults []string // dry-run output to show before confirming
+	pruneRepo       Repo     // repo being pruned
+
+	// Status message shown briefly after operations.
+	statusMsg string
 }
 
 // Option configures the Model.
@@ -102,6 +135,13 @@ func New(svc Service, opts ...Option) Model {
 		return bindings
 	}
 
+	// Initialize the text input for the create flow.
+	ti := textinput.New()
+	ti.Placeholder = "branch-name"
+	ti.CharLimit = 128
+	ti.Width = 40
+	m.createBranch = ti
+
 	return m
 }
 
@@ -124,6 +164,28 @@ func (m Model) SelectedWorktree() (Worktree, bool) {
 		return Worktree{}, false
 	}
 	return li.wt, true
+}
+
+// repoForWorktree finds the Repo that a worktree belongs to.
+func (m Model) repoForWorktree(wt Worktree) (Repo, bool) {
+	for _, r := range m.repos {
+		if r.Name == wt.Repo {
+			return r, true
+		}
+	}
+	return Repo{}, false
+}
+
+// InDialog reports whether the model is currently showing a dialog
+// (create, delete, prune flow) where the parent should suppress quit keys.
+func (m Model) InDialog() bool {
+	switch m.state {
+	case stateCreatePickRepo, stateCreateBranch, stateCreateConfirm, stateCreating,
+		stateDeleteConfirm, stateDeleting,
+		statePrunePickRepo, statePruneDryRun, statePruning:
+		return true
+	}
+	return false
 }
 
 // Ensure Model satisfies tea.Model at compile time.
