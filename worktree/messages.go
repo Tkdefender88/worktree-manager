@@ -14,10 +14,10 @@ type errMsg struct {
 }
 
 // worktreeCreatedMsg is sent when a worktree has been successfully created.
+// The wt field contains a fully populated Worktree (including HEAD, dirty
+// status, etc.) obtained by re-listing after creation.
 type worktreeCreatedMsg struct {
-	repo   Repo
-	branch string
-	path   string
+	wt Worktree
 }
 
 // worktreeDeletedMsg is sent when a worktree has been successfully deleted.

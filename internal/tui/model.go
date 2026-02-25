@@ -76,6 +76,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// In standalone mode, switching prints the path and exits.
 		m.switchedTo = msg.Worktree.Path
 		return m, tea.Quit
+
+	case worktree.WorktreeCreatedEvent:
+		// A parent dashboard might refresh a status bar or show a notification.
+		// The standalone app lets the component handle the reload internally.
+		_ = msg
+
+	case worktree.WorktreeDeletedEvent:
+		// A parent dashboard might update dependent views.
+		_ = msg
+
+	case worktree.WorktreesPrunedEvent:
+		// A parent dashboard might log the pruned paths.
+		_ = msg
 	}
 
 	updated, cmd := m.worktree.Update(msg)

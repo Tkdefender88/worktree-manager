@@ -13,6 +13,13 @@ func (m Model) Init() tea.Cmd {
 
 // Update implements tea.Model.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// When blurred, only process non-key messages (async results, etc.).
+	if !m.focused {
+		if _, isKey := msg.(tea.KeyMsg); isKey {
+			return m, nil
+		}
+	}
+
 	// Global messages handled in any state.
 	switch msg := msg.(type) {
 	case worktreesLoadedMsg:
@@ -30,18 +37,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Async operation results — these arrive from goroutines in any state.
 
 	case worktreeCreatedMsg:
-		m.statusMsg = "Created worktree: " + msg.branch
-		// Reload all worktrees to refresh the list, then emit the event.
+		m.statusMsg = "Created worktree: " + msg.wt.Branch
+		// Reload all worktrees to refresh the list, then emit the event
+		// with the fully populated Worktree struct.
+		wt := msg.wt
 		return m, tea.Batch(
 			loadWorktrees(m.svc, m.repos),
 			func() tea.Msg {
-				return WorktreeCreatedEvent{
-					Worktree: Worktree{
-						Repo:   msg.repo.Name,
-						Branch: msg.branch,
-						Path:   msg.path,
-					},
-				}
+				return WorktreeCreatedEvent{Worktree: wt}
 			},
 		)
 

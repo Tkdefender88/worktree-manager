@@ -30,18 +30,45 @@ func loadWorktrees(svc Service, repos []Repo) tea.Cmd {
 }
 
 // createWorktree returns a tea.Cmd that creates a new worktree.
-// The worktree is created at <repo.WorktreePath>/<branch> and the result is
-// sent back as a worktreeCreatedMsg or errMsg.
+// The worktree is created at <repo.WorktreePath>/<branch>. After creation,
+// it re-lists the repo's worktrees to obtain a fully populated Worktree
+// struct (including HEAD SHA, dirty status, etc.) for the event payload.
 func createWorktree(svc Service, repo Repo, branch string, newBranch bool) tea.Cmd {
 	return func() tea.Msg {
 		wtPath := filepath.Join(repo.WorktreePath, branch)
 		if err := svc.Create(repo.Path, wtPath, branch, newBranch); err != nil {
 			return errMsg{err: err}
 		}
+
+		// Re-list to get the full Worktree data for the event.
+		wts, err := svc.List(repo.Path)
+		if err != nil {
+			// Creation succeeded but list failed — still report success
+			// with the partial data we have.
+			return worktreeCreatedMsg{
+				wt: Worktree{
+					Repo:   repo.Name,
+					Branch: branch,
+					Path:   wtPath,
+				},
+			}
+		}
+
+		// Find the worktree we just created by path.
+		for _, wt := range wts {
+			if wt.Path == wtPath {
+				wt.Repo = repo.Name
+				return worktreeCreatedMsg{wt: wt}
+			}
+		}
+
+		// Fallback if path matching fails (shouldn't happen).
 		return worktreeCreatedMsg{
-			repo:   repo,
-			branch: branch,
-			path:   wtPath,
+			wt: Worktree{
+				Repo:   repo.Name,
+				Branch: branch,
+				Path:   wtPath,
+			},
 		}
 	}
 }

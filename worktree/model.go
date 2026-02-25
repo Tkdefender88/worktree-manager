@@ -47,6 +47,7 @@ type Model struct {
 
 	// UI state.
 	state     state
+	focused   bool
 	list      list.Model
 	worktrees map[string][]Worktree // repo name -> worktrees
 	err       error
@@ -105,10 +106,11 @@ func WithStyles(s Styles) Option {
 // New creates a new worktree Model with the given service and options.
 func New(svc Service, opts ...Option) Model {
 	m := Model{
-		svc:    svc,
-		keyMap: DefaultKeyMap(),
-		styles: DefaultStyles(),
-		state:  stateLoading,
+		svc:     svc,
+		keyMap:  DefaultKeyMap(),
+		styles:  DefaultStyles(),
+		state:   stateLoading,
+		focused: true,
 	}
 	for _, opt := range opts {
 		opt(&m)
@@ -145,12 +147,42 @@ func New(svc Service, opts ...Option) Model {
 	return m
 }
 
-// SetSize updates the component dimensions. Call this from the parent model
-// when the terminal is resized.
+// SetSize updates the component dimensions. The parent model must call this
+// (typically in response to tea.WindowSizeMsg) rather than forwarding
+// WindowSizeMsg to Update — the component does not handle WindowSizeMsg
+// itself, following the same pattern as bubbles/list and bubbles/viewport.
 func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 	m.list.SetSize(width, height)
+}
+
+// Focus gives the component keyboard focus. When focused, the component
+// processes key messages in Update. Call this from the parent model to
+// activate the component in a multi-pane layout.
+func (m *Model) Focus() {
+	m.focused = true
+}
+
+// Blur removes keyboard focus from the component. When blurred, the
+// component ignores key messages in Update. Call this from the parent
+// model to deactivate the component in a multi-pane layout.
+func (m *Model) Blur() {
+	m.focused = false
+	// Also blur the text input if we're mid-create.
+	m.createBranch.Blur()
+}
+
+// Focused reports whether the component currently has keyboard focus.
+func (m Model) Focused() bool {
+	return m.focused
+}
+
+// StatusMsg returns the current status message, if any. This allows parent
+// models to display the status in their own chrome (e.g. a status bar)
+// rather than relying on the component's built-in rendering.
+func (m Model) StatusMsg() string {
+	return m.statusMsg
 }
 
 // SelectedWorktree returns the currently selected worktree, if any.
