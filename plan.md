@@ -202,7 +202,7 @@ type WorktreesPrunedEvent struct { Pruned []string }
 | **4. Operations** | COMPLETE | Create flow (repo picker → branch input), delete with confirmation, prune, switch | Updates to `model.go`, `commands.go`, `messages.go`, `update.go`, `view.go` |
 | **5. CLI Wrapper** | COMPLETE | Cobra root command, viper config loading, root model wrapping the worktree model, debug dump support | `main.go`, `cmd/root.go` |
 | **6. Events** | COMPLETE | Exported event messages for parent integration, `SetSize()`, `Focus()`/`Blur()`, `WithDebug`, `StatusMsg()`, dimension-aware dialogs | `worktree/messages.go`, `worktree/model.go`, `worktree/view.go`, `worktree/update.go` |
-| **7. Testing** | | Mock service, unit tests, teatest integration tests | `worktree/model_test.go`, `internal/git/worktree_test.go` |
+| **7. Testing** | COMPLETE | Mock service, unit tests for model/commands/delegate/config, teatest integration tests | `worktree/model_test.go`, `worktree/mock_service_test.go`, `worktree/delegate_test.go`, `internal/config/config_test.go`, `internal/tui/integration_test.go`, `internal/git/worktree_test.go` |
 
 ## Dependencies
 
