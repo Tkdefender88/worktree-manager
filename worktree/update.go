@@ -3,12 +3,14 @@ package worktree
 import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Init implements tea.Model. It kicks off loading all worktrees.
+// Init implements tea.Model. It kicks off loading all worktrees and starts
+// the spinner animation.
 func (m Model) Init() tea.Cmd {
-	return loadWorktrees(m.svc, m.repos)
+	return tea.Batch(loadWorktrees(m.svc, m.repos), m.spinner.Tick)
 }
 
 // Update implements tea.Model.
@@ -18,6 +20,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if _, isKey := msg.(tea.KeyMsg); isKey {
 			return m, nil
 		}
+	}
+
+	// Forward spinner ticks only when async work is in progress.
+	if msg, ok := msg.(spinner.TickMsg); ok {
+		if m.isAsync() {
+			var cmd tea.Cmd
+			m.spinner, cmd = m.spinner.Update(msg)
+			return m, cmd
+		}
+		return m, nil
 	}
 
 	// Global messages handled in any state.
@@ -37,21 +49,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Async operation results — these arrive from goroutines in any state.
 
 	case worktreeCreatedMsg:
+		m.state = stateLoading
 		m.statusMsg = "Created worktree: " + msg.wt.Branch
 		// Reload all worktrees to refresh the list, then emit the event
 		// with the fully populated Worktree struct.
 		wt := msg.wt
 		return m, tea.Batch(
 			loadWorktrees(m.svc, m.repos),
+			m.spinner.Tick,
 			func() tea.Msg {
 				return WorktreeCreatedEvent{Worktree: wt}
 			},
 		)
 
 	case worktreeDeletedMsg:
+		m.state = stateLoading
 		m.statusMsg = "Deleted worktree"
 		return m, tea.Batch(
 			loadWorktrees(m.svc, m.repos),
+			m.spinner.Tick,
 			func() tea.Msg { return WorktreeDeletedEvent{Path: msg.path} },
 		)
 
@@ -67,9 +83,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case worktreesPrunedMsg:
+		m.state = stateLoading
 		m.statusMsg = "Pruned stale worktrees"
 		return m, tea.Batch(
 			loadWorktrees(m.svc, m.repos),
+			m.spinner.Tick,
 			func() tea.Msg { return WorktreesPrunedEvent{Pruned: msg.pruned} },
 		)
 	}
@@ -220,7 +238,10 @@ func (m Model) updateCreateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 			branch := m.createBranch.Value()
 			m.state = stateCreating
 			m.statusMsg = "Creating worktree..."
-			return m, createWorktree(m.svc, repo, branch, m.createNewBranch)
+			return m, tea.Batch(
+				createWorktree(m.svc, repo, branch, m.createNewBranch),
+				m.spinner.Tick,
+			)
 		}
 	}
 	return m, nil
@@ -263,7 +284,10 @@ func (m Model) updateDeleteConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.state = stateDeleting
 			m.statusMsg = "Deleting worktree..."
-			return m, deleteWorktree(m.svc, repo, m.deleteTarget, m.deleteForce)
+			return m, tea.Batch(
+				deleteWorktree(m.svc, repo, m.deleteTarget, m.deleteForce),
+				m.spinner.Tick,
+			)
 		}
 	}
 	return m, nil
@@ -281,7 +305,10 @@ func (m Model) handlePruneStart() (tea.Model, tea.Cmd) {
 		m.pruneRepo = m.repos[0]
 		m.state = statePruning
 		m.statusMsg = "Checking for stale worktrees..."
-		return m, pruneWorktreesDryRun(m.svc, m.repos[0])
+		return m, tea.Batch(
+			pruneWorktreesDryRun(m.svc, m.repos[0]),
+			m.spinner.Tick,
+		)
 	}
 	m.pruneRepoIdx = 0
 	m.state = statePrunePickRepo
@@ -309,7 +336,10 @@ func (m Model) updatePrunePickRepo(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pruneRepo = m.repos[m.pruneRepoIdx]
 			m.state = statePruning
 			m.statusMsg = "Checking for stale worktrees..."
-			return m, pruneWorktreesDryRun(m.svc, m.pruneRepo)
+			return m, tea.Batch(
+				pruneWorktreesDryRun(m.svc, m.pruneRepo),
+				m.spinner.Tick,
+			)
 		}
 	}
 	return m, nil
@@ -326,7 +356,10 @@ func (m Model) updatePruneDryRun(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "y", "enter":
 			m.state = statePruning
 			m.statusMsg = "Pruning..."
-			return m, pruneWorktrees(m.svc, m.pruneRepo)
+			return m, tea.Batch(
+				pruneWorktrees(m.svc, m.pruneRepo),
+				m.spinner.Tick,
+			)
 		}
 	}
 	return m, nil

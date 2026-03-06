@@ -65,7 +65,7 @@ func (m Model) contentWidth() int {
 }
 
 func (m Model) viewLoading() string {
-	return m.dialogStyle().Render("Loading worktrees...")
+	return m.dialogStyle().Render(m.spinner.View() + " Loading worktrees...")
 }
 
 func (m Model) viewError() string {
@@ -84,7 +84,7 @@ func (m Model) viewList() string {
 }
 
 func (m Model) viewStatus() string {
-	return m.dialogStyle().Render(m.statusMsg)
+	return m.dialogStyle().Render(m.spinner.View() + " " + m.statusMsg)
 }
 
 // --- Create flow views ---

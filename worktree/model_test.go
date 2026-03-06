@@ -195,10 +195,20 @@ func TestInit_ReturnsLoadCmd(t *testing.T) {
 	cmd := m.Init()
 	require.NotNil(t, cmd, "Init should return a non-nil cmd")
 
-	// Execute the cmd — it should call List for each repo.
+	// Init returns a batch (loadWorktrees + spinner.Tick). Execute the batch
+	// and look for the worktreesLoadedMsg among the results.
 	msg := execCmd(t, cmd)
-	loaded, ok := msg.(worktreesLoadedMsg)
-	require.True(t, ok, "Init cmd should produce worktreesLoadedMsg, got %T", msg)
+	results := execBatch(t, msg)
+
+	var loaded worktreesLoadedMsg
+	var found bool
+	for _, r := range results {
+		if wl, ok := r.(worktreesLoadedMsg); ok {
+			loaded = wl
+			found = true
+		}
+	}
+	require.True(t, found, "Init batch should contain worktreesLoadedMsg")
 	assert.Len(t, loaded.worktrees, 2)
 	assert.Len(t, svc.listCalls, 2)
 }
@@ -211,10 +221,16 @@ func TestInit_ServiceError(t *testing.T) {
 
 	cmd := m.Init()
 	msg := execCmd(t, cmd)
+	results := execBatch(t, msg)
 
-	errResult, ok := msg.(errMsg)
-	require.True(t, ok, "expected errMsg, got %T", msg)
-	assert.Equal(t, errTest, errResult.err)
+	var found bool
+	for _, r := range results {
+		if errResult, ok := r.(errMsg); ok {
+			assert.Equal(t, errTest, errResult.err)
+			found = true
+		}
+	}
+	require.True(t, found, "expected errMsg in Init batch results")
 }
 
 // ---------------------------------------------------------------------------
@@ -461,10 +477,11 @@ func TestUpdate_WorktreeCreatedMsg(t *testing.T) {
 	wt := Worktree{Repo: "alpha", Branch: "new-branch", Path: "/worktrees/alpha/new-branch"}
 	m, cmd := sendMsgAndCmd(t, m, worktreeCreatedMsg{wt: wt})
 
+	assert.Equal(t, stateLoading, m.state)
 	assert.Contains(t, m.statusMsg, "new-branch")
 	require.NotNil(t, cmd)
 
-	// The cmd should be a batch: reload + emit event.
+	// The cmd should be a batch: reload + spinner tick + emit event.
 	msg := execCmd(t, cmd)
 	results := execBatch(t, msg)
 	require.NotEmpty(t, results)
@@ -505,11 +522,19 @@ func TestDelete_ConfirmAndExecute(t *testing.T) {
 	assert.Equal(t, "Deleting worktree...", m.statusMsg)
 	require.NotNil(t, cmd)
 
-	// Verify the service was called.
+	// The cmd is a batch (deleteWorktree + spinner.Tick). Execute and find
+	// the worktreeDeletedMsg among the results.
 	msg := execCmd(t, cmd)
-	deleted, ok := msg.(worktreeDeletedMsg)
-	require.True(t, ok, "expected worktreeDeletedMsg, got %T", msg)
-	assert.Equal(t, "/worktrees/alpha/feature", deleted.path)
+	results := execBatch(t, msg)
+
+	var found bool
+	for _, r := range results {
+		if deleted, ok := r.(worktreeDeletedMsg); ok {
+			assert.Equal(t, "/worktrees/alpha/feature", deleted.path)
+			found = true
+		}
+	}
+	require.True(t, found, "expected worktreeDeletedMsg in batch results")
 }
 
 func TestDelete_CancelWithEsc(t *testing.T) {
@@ -607,6 +632,7 @@ func TestUpdate_WorktreeDeletedMsg(t *testing.T) {
 	m := newTestModel(t, svc, repos, testWorktrees())
 
 	m, cmd := sendMsgAndCmd(t, m, worktreeDeletedMsg{path: "/worktrees/alpha/feature"})
+	assert.Equal(t, stateLoading, m.state)
 	assert.Equal(t, "Deleted worktree", m.statusMsg)
 	require.NotNil(t, cmd)
 
@@ -662,10 +688,20 @@ func TestPrune_MultiRepo_PickRepoThenDryRunThenConfirm(t *testing.T) {
 	assert.Equal(t, statePruning, m.state)
 	require.NotNil(t, cmd)
 
-	// Execute the dry-run cmd.
+	// The cmd is a batch (pruneWorktreesDryRun + spinner.Tick). Execute and
+	// find the pruneDryRunMsg among the results.
 	msg := execCmd(t, cmd)
-	dryResult, ok := msg.(pruneDryRunMsg)
-	require.True(t, ok, "expected pruneDryRunMsg, got %T", msg)
+	results := execBatch(t, msg)
+
+	var dryResult pruneDryRunMsg
+	var ok bool
+	for _, r := range results {
+		if dr, isDry := r.(pruneDryRunMsg); isDry {
+			dryResult = dr
+			ok = true
+		}
+	}
+	require.True(t, ok, "expected pruneDryRunMsg in batch results")
 	assert.Len(t, dryResult.pruned, 2)
 
 	// Feed the dry-run result back.
@@ -755,6 +791,7 @@ func TestUpdate_WorktreesPrunedMsg(t *testing.T) {
 	m := newTestModel(t, svc, repos, testWorktrees())
 
 	m, cmd := sendMsgAndCmd(t, m, worktreesPrunedMsg{pruned: []string{"/stale/1"}})
+	assert.Equal(t, stateLoading, m.state)
 	assert.Equal(t, "Pruned stale worktrees", m.statusMsg)
 	require.NotNil(t, cmd)
 

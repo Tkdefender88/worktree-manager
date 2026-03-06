@@ -3,8 +3,10 @@ package worktree
 import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // state tracks the current UI mode.
@@ -49,6 +51,7 @@ type Model struct {
 	state     state
 	focused   bool
 	list      list.Model
+	spinner   spinner.Model
 	worktrees map[string][]Worktree // repo name -> worktrees
 	err       error
 	width     int
@@ -115,6 +118,12 @@ func New(svc Service, opts ...Option) Model {
 	for _, opt := range opts {
 		opt(&m)
 	}
+
+	// Initialize the spinner for async operation feedback.
+	s := spinner.New()
+	s.Spinner = spinner.MiniDot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	m.spinner = s
 
 	// Initialize the list with an empty set of items and our custom delegate.
 	// Items will be populated asynchronously via Init().
@@ -206,6 +215,16 @@ func (m Model) repoForWorktree(wt Worktree) (Repo, bool) {
 		}
 	}
 	return Repo{}, false
+}
+
+// isAsync reports whether the model is currently performing an async operation
+// where the spinner should be active.
+func (m Model) isAsync() bool {
+	switch m.state {
+	case stateLoading, stateCreating, stateDeleting, statePruning:
+		return true
+	}
+	return false
 }
 
 // InDialog reports whether the model is currently showing a dialog
