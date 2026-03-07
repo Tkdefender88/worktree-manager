@@ -106,7 +106,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	rootModel := tui.New(wtModel, tuiOpts...)
-	p := tea.NewProgram(rootModel, tea.WithAltScreen())
+	p := tea.NewProgram(rootModel, tea.WithAltScreen(), tea.WithOutput(os.Stderr))
 
 	finalModel, err := p.Run()
 	if err != nil {
