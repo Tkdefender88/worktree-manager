@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
 )
 
 // state tracks the current UI mode.
@@ -125,8 +124,6 @@ func New(svc Service, opts ...Option) Model {
 	s.Spinner = spinner.MiniDot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	m.spinner = s
-
-	lipgloss.SetColorProfile(termenv.TrueColor)
 
 	// Initialize the list with an empty set of items and our custom delegate.
 	// Items will be populated asynchronously via Init().
