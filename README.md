@@ -43,6 +43,26 @@ repos:
 
 ## Usage
 
+### Adding a repository
+
+From inside any directory in a git repository, run:
+
+```sh
+worktree-manager init
+```
+
+You will be prompted for a project name. If the config file does not exist yet you will also be prompted for the default worktree base path.
+
+Pass `-n`/`--name` to skip the prompt:
+
+```sh
+worktree-manager init -n my-project
+```
+
+This finds the nearest `.git` root (searching upward from the current directory), adds it to the config, and creates the config file if it does not already exist.
+
+### Launching the TUI
+
 ```sh
 worktree-manager
 ```
@@ -75,9 +95,17 @@ wt() { cd "$(worktree-manager)" || return; }
 
 ### Flags
 
+Global flags (available on all subcommands):
+
 ```
 --config string   config file (default ~/.config/worktree-manager/config.yaml)
 --debug           dump all tea.Msg values to debug.log
+```
+
+`init` flags:
+
+```
+-n, --name string   project name to use in the config
 ```
 
 ## Library usage
@@ -108,7 +136,9 @@ The parent model is responsible for calling `SetSize(width, height)` on resize a
 ```
 worktree-manager/
 ├── main.go                     # Entry point
-├── cmd/root.go                 # Cobra CLI, Viper config loading
+├── cmd/
+│   ├── root.go                 # Cobra CLI, Viper config loading
+│   └── init.go                 # `init` subcommand
 ├── internal/
 │   ├── config/config.go        # Config structs + validation
 │   ├── git/worktree.go         # Real git worktree operations
