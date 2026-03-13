@@ -2,11 +2,13 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -32,8 +34,8 @@ and use the TUI to list, create, delete, and switch between worktrees.`,
 }
 
 // Execute is the entry point called from main.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+func Execute(ctx context.Context) {
+	if err := fang.Execute(ctx, rootCmd); err != nil {
 		os.Exit(1)
 	}
 }
