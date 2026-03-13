@@ -6,9 +6,12 @@ package tui
 import (
 	"fmt"
 	"io"
+	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/muesli/termenv"
 
 	"github.com/Tkdefender88/worktree-manager/worktree"
 )
@@ -39,6 +42,10 @@ func New(wt worktree.Model, opts ...Option) Model {
 	m := Model{worktree: wt}
 	for _, opt := range opts {
 		opt(&m)
+	}
+
+	if termenv.NewOutput(os.Stderr).ColorProfile() != termenv.Ascii {
+		lipgloss.SetColorProfile(termenv.TrueColor)
 	}
 	return m
 }

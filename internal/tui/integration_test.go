@@ -71,11 +71,28 @@ func testRepos() []worktree.Repo {
 func testWorktrees() map[string][]worktree.Worktree {
 	return map[string][]worktree.Worktree{
 		"/repos/alpha": {
-			{Repo: "alpha", Path: "/repos/alpha", Branch: "main", HEAD: "aaaa000000000000000000000000000000000000", IsMain: true},
-			{Repo: "alpha", Path: "/worktrees/alpha/feature", Branch: "feature", HEAD: "bbbb000000000000000000000000000000000000"},
+			{
+				Repo:   "alpha",
+				Path:   "/repos/alpha",
+				Branch: "main",
+				HEAD:   "aaaa000000000000000000000000000000000000",
+				IsMain: true,
+			},
+			{
+				Repo:   "alpha",
+				Path:   "/worktrees/alpha/feature",
+				Branch: "feature",
+				HEAD:   "bbbb000000000000000000000000000000000000",
+			},
 		},
 		"/repos/beta": {
-			{Repo: "beta", Path: "/repos/beta", Branch: "main", HEAD: "cccc000000000000000000000000000000000000", IsMain: true},
+			{
+				Repo:   "beta",
+				Path:   "/repos/beta",
+				Branch: "main",
+				HEAD:   "cccc000000000000000000000000000000000000",
+				IsMain: true,
+			},
 		},
 	}
 }
@@ -89,8 +106,19 @@ func singleRepo() []worktree.Repo {
 func singleRepoWorktrees() map[string][]worktree.Worktree {
 	return map[string][]worktree.Worktree{
 		"/repos/solo": {
-			{Repo: "solo", Path: "/repos/solo", Branch: "main", HEAD: "dddd000000000000000000000000000000000000", IsMain: true},
-			{Repo: "solo", Path: "/worktrees/solo/dev", Branch: "dev", HEAD: "eeee000000000000000000000000000000000000"},
+			{
+				Repo:   "solo",
+				Path:   "/repos/solo",
+				Branch: "main",
+				HEAD:   "dddd000000000000000000000000000000000000",
+				IsMain: true,
+			},
+			{
+				Repo:   "solo",
+				Path:   "/worktrees/solo/dev",
+				Branch: "dev",
+				HEAD:   "eeee000000000000000000000000000000000000",
+			},
 		},
 	}
 }
@@ -244,8 +272,19 @@ func TestIntegration_DeleteFlow(t *testing.T) {
 	t.Parallel()
 	wts := map[string][]worktree.Worktree{
 		"/repos/alpha": {
-			{Repo: "alpha", Path: "/repos/alpha", Branch: "main", HEAD: "aaaa000000000000000000000000000000000000", IsMain: true},
-			{Repo: "alpha", Path: "/worktrees/alpha/feature", Branch: "feature", HEAD: "bbbb000000000000000000000000000000000000"},
+			{
+				Repo:   "alpha",
+				Path:   "/repos/alpha",
+				Branch: "main",
+				HEAD:   "aaaa000000000000000000000000000000000000",
+				IsMain: true,
+			},
+			{
+				Repo:   "alpha",
+				Path:   "/worktrees/alpha/feature",
+				Branch: "feature",
+				HEAD:   "bbbb000000000000000000000000000000000000",
+			},
 		},
 	}
 	svc := &mockService{
