@@ -45,6 +45,8 @@ func init() {
 		"config file (default is $HOME/.config/worktree-manager/config.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false,
 		"dump all tea.Msg values to debug.log")
+
+	rootCmd.AddCommand(initCmd)
 }
 
 func initConfig() {
